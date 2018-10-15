@@ -10,6 +10,9 @@
 3. 执行命令，安装appium: cnpm install appium -g
 4. 安装完成后，验证appium: appium.cmd --command-timeout 120000 -p 4723 -U DEVICE_ID
 
+为什么要用appium.js，而不是官方推荐的[Appium Desktop Apps](https://github.com/appium/appium-desktop/releases)?
+因为，appium.js支持命令行启动appium-server，如下图：
+![appium-cmd.png](https://github.com/RockFeng0/img-folder/blob/master/rtsf-app-img/appium-cmd.png)
 > appium.cmd其实就是:  node "%appdata%\npm\node_modules\appium\build\lib\main.js" --command-timeout 120000 -p 4723 -U DEVICE_ID
 
 ## 设置ANDROID_HOME环境变量
@@ -17,6 +20,7 @@
 2. 解压文件android_home.zip，新增环境变量 ANDROID_HOME，为解压后的根目录的路径
 3. 在环境变量path中，追加 %ANDROID_HOME%\platform-tools
 
+![android-tools.png](https://github.com/RockFeng0/img-folder/blob/master/rtsf-app-img/android-tools.png)
 > 如果你安装了  android SDK，并设置了 ANDROID_HOME, 确保 adb 和 aapt命令可以被调用
 
 ## 下载selenium-server-standalone.jar
@@ -29,6 +33,7 @@ pip install rtsf-app
 # 命令介绍
 
 ## 工具命令
+
 1. 查看设备信息, 格式: 设备id:设备属性     ,设备属性中，android_version就是设备版本，即android device platform version
 
 ```
@@ -44,6 +49,8 @@ pip install rtsf-app
 > ainfo --apk C:\ApiDemos-debug.apk
 {'platformName': 'Android', 'deviceName': None, 'platformVersion': None, 'app': 'C:\\d_disk\\auto\\buffer\\test\\tools\\android\\ApiDemos-debug.apk', 'appPackage': 'io.appium.android.apis', 'appWaitPackage': 'io.appium.android.apis', 'appActivity': 'io.appium.android.apis.ApiDemos', 'unicodeKeyboard': True, 'resetKeyboard': True, 'newCommandTimeout': 120000}
 ```
+示例,如:
+![ainfo-cmd.png](https://github.com/RockFeng0/img-folder/blob/master/rtsf-app-img/ainfo-cmd.png)
 
 ## 场景一  本地测试
 
@@ -85,42 +92,42 @@ pip install rtsf-app
 
 > ctrl + c 结束端口占用
 
-## 场景二 远程控制测试-Selenium Grid Mode
+示例,如:
+![scene-1.png](https://github.com/RockFeng0/img-folder/blob/master/rtsf-app-img/scene-1.png)
+
+## 场景二 分布式测试-Selenium Grid Mode
 
 **测试背景及分析**
 
-```
-背景: 
-    比如，手上有1000条相对独立的测试case，一台PC一台设备的方式完成这些case的验证，效率较低。那么，并行测试是最好的解决办法
+背景: 比如，手上有1000条相对独立的测试case，一台PC一台设备的方式完成这些case的验证，效率较低。那么，并行测试是最好的解决办法
 
-分析: 
-    1.多台PC连接多台设备的测试场景假设,其原理是基于selenium RC，使用selenium Grid的方式，使得appium server作为node节点，进行分布式测试
-    2.可是，即使是分布式测试，它的过程也是一个并发的过程，每台设备分别都要测试1000条case。好比很多车在支路上跑，汇入的主干道却只有一条
-    3.需要做的，就是让这1000条case，分配给这些设备，让它们并行测试。解决方法：多重hub
-```
-
-多台PC,连接多台设备,并行测试case场景，步骤如下
+分析:
+1. 多台PC连接多台设备的测试场景假设,其原理是基于selenium RC，使用selenium Grid的方式，使得appium server作为node节点，进行分布式测试
+2. 可是，即使是分布式测试，它的过程也是一个并发的过程，每台设备分别都要测试1000条case。好比很多车在支路上跑，汇入的主干道却只有一条
+3. 需要做的，就是让这1000条case，分配给这些设备，让它们并行测试。解决方法：**多重hub**，不同的hub，可以运行在不同机器上，也可以运行在同一台机器上
 
 **1.测试场景假设**
-```
- apk(待测试的apk): C:\ApiDemos-debug.apk
- case1(自动化测试用例): C:\test_case1.yaml
- case2(自动化测试用例): C:\test_case2.yaml
+
+- apk(待测试的apk): C:\ApiDemos-debug.apk
+- case1(自动化测试用例): C:\test_case1.yaml
+- case2(自动化测试用例): C:\test_case2.yaml
+
+- PC_Server_IP(Grid Hub端): 192.168.1.254:4444  ~ PC A
+- PC_Server_IP(Grid Hub端): 192.168.1.254:5555  ~ PC B
+
+- PC_A_IP(本机): 192.168.1.1
+- PC_A_Android_Device_ID(天天模拟器): 127.0.0.1:6555
  ...
 
- PC_Server_IP(Grid Hub端): 192.168.1.254
-
- PC_A_IP(本机): 192.168.1.1
- PC_A_Android_Device_ID(天天模拟器): 127.0.0.1:6555
+- PC_B_IP(远端机): 192.168.1.2
+- PC_B_Android_Device_ID(天天模拟器): 127.0.0.1:6555
  ...
 
- PC_B_IP(远端机): 192.168.1.2
- PC_B_Android_Device_ID(天天模拟器): 127.0.0.1:6555
- ...
+并行测试: PC_A连接的所有机器，测试case1; PC_B连接的所有机器,测试case2
 
-注意: adb.exe最多支持每台pc链接20台设备
-并行测试: PC_A连接的所有机器，测试case1;PC_B连接的所有机器,测试case2
-```
+**注意:** adb.exe最多支持每台pc链接20台设备
+
+![grid-hub.png](https://github.com/RockFeng0/img-folder/blob/master/rtsf-app-img/grid-hub.png)
 
 **2.开启selenium grid hub**
 
@@ -151,14 +158,15 @@ pip install rtsf-app
 
 **4.ardriver驱动测试**
 
+ardriver命令，允许在 grid hub中的任何一台机器中，触发执行。**ardriver本身是个并发驱动测试**，但是，每次使用都会开一个进程.因此，并发的过程，就是多次调用该命令
+
 注意:
 - 如果使用 --apk参数，那么 确保 PC A 和 PC B,在该指定的文件路径中，存在这个apk。
 - 如果使用 --package和--activity参数，那么确保，连接到PC的手机，已经装了这个apk
 - aldriver 与 ardriver的区别就在于: ardriver支持 ip和port参数，允许grid模式
 
 ```
-# ardriver本身是个并发驱动测试，但是，每次使用都会开一个进程，并发的过程，就采用多次执行命令吧
-# PC_A执行case1，执行case1的测试验证
+# PC_A的所有设备，执行case1的测试验证
 > ardriver C:\test_case1.yaml --apk C:\ApiDemos-debug.apk --ip 192.168.1.254 --port 4444
 
 # PC_B的所有设备，执行case2的测试验证
